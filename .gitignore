@@ -287,5 +287,10 @@ poetry.toml
 
 .idea
 
+# Ignore macos files
 .DS_Store
 */.DS_Store
+
+# Ignore raw and fits data
+data/raw
+data/fits

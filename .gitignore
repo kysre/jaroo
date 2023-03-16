@@ -294,3 +294,4 @@ poetry.toml
 # Ignore raw and fits data
 data/raw
 data/fits
+data/plots

@@ -5,7 +5,7 @@ from typing import List
 import numpy as np
 from astropy.io import fits
 
-logger = logging.getLogger('__name__')
+logger = logging.getLogger()
 
 
 class FitsHandler:
@@ -15,7 +15,7 @@ class FitsHandler:
     Returns images as np.ndarray
     """
 
-    PATH = os.getcwd() + "/../data/fits/"
+    PATH = os.getcwd() + "/data/fits/"
 
     @classmethod
     def get_grayscale(cls, rgb_image: np.ndarray) -> np.ndarray:

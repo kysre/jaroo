@@ -7,3 +7,5 @@ DARK_EXPOSURE_TIMES = [
     '10',
     '30',
 ]
+
+STAR_BORDER_RADIUS = 40  # pixels

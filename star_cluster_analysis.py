@@ -69,5 +69,6 @@ if __name__ == '__main__':
         fitted_data = get_fitted_data(arr)
         data_mean, data_std, data_fwhm = np.mean(arr), np.std(arr), get_fwhm(arr)
         fitted_mean, fitted_std, fitted_fwhm = np.mean(fitted_data), np.std(fitted_data), get_fwhm(fitted_data)
+        logger.info(f'star brightest pixel value = {brightest_pixel}')
         logger.info(f'data:\tmean={data_mean}\tstd={data_std}\tfwhm={data_fwhm}')
         logger.info(f'fitted:\tmean={fitted_mean}\tstd={fitted_std}\tfwhm={fitted_fwhm}')

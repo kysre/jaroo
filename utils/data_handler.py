@@ -39,13 +39,17 @@ class FitsHandler:
             filename = filenames[i]
             if not filename.startswith('DSC'):
                 continue
-            logger.info(f'Reading {filename}')
-            hdu_list = fits.open(self.PATH + filename)
-            rgb_image = hdu_list[0].data
-            hdu_list.close()
-            logger.info(f'Processing {filename}')
-            grayscale_image = self.get_grayscale(rgb_image)
-            image = self.crop_image(grayscale_image)
+            image = self.get_image_from_fits_by_name(filename)
             images.append(image)
             logger.info(f'Done {filename}')
         return images
+
+    def get_image_from_fits_by_name(self, filename: str) -> np.ndarray:
+        logger.info(f'Reading {filename}')
+        hdu_list = fits.open(self.PATH + filename)
+        rgb_image = hdu_list[0].data
+        hdu_list.close()
+        logger.info(f'Processing {filename}')
+        grayscale_image = self.get_grayscale(rgb_image)
+        image = self.crop_image(grayscale_image)
+        return image

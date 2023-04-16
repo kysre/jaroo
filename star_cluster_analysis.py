@@ -1,9 +1,10 @@
 import logging
-from math import sqrt
+import csv
 
 import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
 
 from utils.data_handler import FitsHandler
 from utils.models import StarClusterImage
@@ -50,6 +51,36 @@ def get_fitted_data(arr: np.ndarray):
     return fitted_data
 
 
+def draw_3d_plot(data_1: np.ndarray, data_2: np.ndarray, title: str):
+    # Create a meshgrid for the x and y coordinates
+    x = np.arange(0, 21, 1)
+    y = np.arange(0, 21, 1)
+    X, Y = np.meshgrid(x, y)
+    # Clear previous plots
+    plt.clf()
+    # Create a new figure and add two 3D axes
+    fig = plt.figure()
+    ax1 = fig.add_subplot(121, projection='3d')
+    ax2 = fig.add_subplot(122, projection='3d')
+    # Plot the fitted data on the first axis
+    ax1.plot_surface(X, Y, data_1)
+    ax1.set_xlabel('X')
+    ax1.set_ylabel('Y')
+    ax1.set_zlabel('Original Data')
+    ax1.set_title('3D Plot of Original Data')
+    # Plot the original data on the second axis
+    ax2.plot_surface(X, Y, data_2)
+    ax2.set_xlabel('X')
+    ax2.set_ylabel('Y')
+    ax2.set_zlabel('Fitted Data')
+    ax2.set_title('3D Plot of Fitted Data')
+    # Adjust the spacing between the subplots
+    plt.subplots_adjust(wspace=0.5)
+    plt.title(title)
+    file_path = 'data/plots/cluster_' + title + '.png'
+    plt.savefig(file_path)
+
+
 if __name__ == '__main__':
     logger.info('Reading FITS files...')
     fits_handler = FitsHandler()
@@ -61,6 +92,7 @@ if __name__ == '__main__':
     star_cluster_image.calc_sorted_star_weights()
     brightest_star_centers = star_cluster_image.get_brightest_star_centers(20)
 
+    data_list = []
     for i in range(20):
         logger.info(f'Calculating rank {i + 1} brightest star mean and std...')
         cropped = star_cluster_image.get_cropped_image_by_center(brightest_star_centers[i])
@@ -69,6 +101,34 @@ if __name__ == '__main__':
         fitted_data = get_fitted_data(arr)
         data_mean, data_std, data_fwhm = np.mean(arr), np.std(arr), get_fwhm(arr)
         fitted_mean, fitted_std, fitted_fwhm = np.mean(fitted_data), np.std(fitted_data), get_fwhm(fitted_data)
-        logger.info(f'star brightest pixel value = {brightest_pixel}')
-        logger.info(f'data:\tmean={data_mean}\tstd={data_std}\tfwhm={data_fwhm}')
-        logger.info(f'fitted:\tmean={fitted_mean}\tstd={fitted_std}\tfwhm={fitted_fwhm}')
+        data_list.append({
+            '#': i + 1,
+            'star_brightest_pixel_value': brightest_pixel,
+            'data_mean': data_mean,
+            'data_std': data_std,
+            'data_fwhm': data_fwhm,
+            'fitted_mean': fitted_mean,
+            'fitted_std': fitted_std,
+            'fitted_fwhm': fitted_fwhm,
+        })
+        logger.info(f'drawing 3d plot of {i + 1} brightest star')
+        draw_3d_plot(arr, fitted_data, f'brightest_star_{i + 1}')
+        logger.info('DONE')
+
+    logger.info('exporting data values to csv')
+    csv_file_path = 'data/csv/star_cluster_analysis.csv'
+    with open(csv_file_path, mode='w', newline='') as csv_file:
+        fieldnames = [
+            '#',
+            'star_brightest_pixel_value',
+            'data_mean',
+            'data_std',
+            'data_fwhm',
+            'fitted_mean',
+            'fitted_std',
+            'fitted_fwhm',
+        ]
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for data in data_list:
+            writer.writerow(data)

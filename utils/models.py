@@ -180,16 +180,6 @@ class StarClusterImage:
                     self.marks[i][j] = 1
         return False
 
-    def _is_unvisited_and_star(self, x: int, y: int) -> bool:
-        if x < 0 or y < 0 or \
-                x >= self.image.shape[0] or \
-                y >= self.image.shape[1]:
-            return False
-        if self.marks[x][y]:
-            return False
-        if self.image[x][y] > self.star_flux_threshold:
-            return True
-
     def get_cropped_image_by_center(self, star_center: Tuple[int, int]) -> np.ndarray:
         x_start = star_center[0] - self.CROPPED_STAR_IMAGE_SIZE
         x_end = star_center[0] + self.CROPPED_STAR_IMAGE_SIZE + 1

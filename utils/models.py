@@ -21,6 +21,25 @@ class DarkImage:
         self._median_array: np.ndarray = self._get_median_array(self._stacked_images)
         self._std_array: np.ndarray = self._get_std_array(self._stacked_images)
 
+    def get_sigma_clipped_median(self, std_count: int = 3) -> np.ndarray:
+        dark_image_shape = self._stacked_images.shape[1], self._stacked_images.shape[2]
+        sigma_clipped_dark = np.zeros(shape=dark_image_shape)
+        for j in range(self._stacked_images.shape[1]):
+            for k in range(self._stacked_images.shape[2]):
+                pixel_values = []
+                for i in range(self._stacked_images.shape[0]):
+                    pixel_value = self._stacked_images[i][j][k]
+                    pixel_median = self._median_array[j][k]
+                    pixel_std = self._std_array[j][k]
+                    if (
+                            pixel_median + std_count * pixel_std
+                    ) > pixel_value > (
+                            pixel_median - std_count * pixel_std
+                    ):
+                        pixel_values.append(pixel_value)
+                sigma_clipped_dark[j][k] = np.median(pixel_values)
+        return sigma_clipped_dark
+
     def get_exposure_values_in_std_range(self, std_count: int) -> List[float]:
         values_in_std_range = []
         for j in range(self._stacked_images.shape[1]):

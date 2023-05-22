@@ -76,6 +76,17 @@ class DarkImage:
         return np.std(stacked_images, axis=0)
 
 
+class FlatImage:
+    def __init__(self, flat_images: List[np.ndarray]):
+        stacked_image = np.stack(flat_images)
+        self.image: np.ndarray = np.median(stacked_image, axis=0)
+
+    def get_normalized_flat(self, flat_dark: np.ndarray):
+        dark_cleaned_flat = self.image - flat_dark
+        normalized_flat = dark_cleaned_flat / np.max(dark_cleaned_flat)
+        return normalized_flat
+
+
 class StarClusterImage:
     """
     This class finds stars in an image from a star cluster and

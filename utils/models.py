@@ -37,7 +37,8 @@ class DarkImage:
                             pixel_median - std_count * pixel_std
                     ):
                         pixel_values.append(pixel_value)
-                sigma_clipped_dark[j][k] = np.median(pixel_values)
+                if pixel_values:
+                    sigma_clipped_dark[j][k] = np.median(pixel_values)
         return sigma_clipped_dark
 
     def get_exposure_values_in_std_range(self, std_count: int) -> List[float]:
@@ -85,6 +86,53 @@ class FlatImage:
         dark_cleaned_flat = self.image - flat_dark
         normalized_flat = dark_cleaned_flat / np.max(dark_cleaned_flat)
         return normalized_flat
+
+
+class ScienceImage:
+    ALIGNMENT_DISPLACEMENT_THRESHOLD_X: int
+    ALIGNMENT_DISPLACEMENT_THRESHOLD_Y: int
+
+    def __init__(self, unclean_science_images: List[np.ndarray],
+                 flat_image: np.ndarray, science_dark: np.ndarray):
+        self.aligned_image: np.ndarray = None
+        self.image_shape: Tuple = unclean_science_images[0].shape
+        self.science_images: List[np.ndarray] = []
+        for img in unclean_science_images:
+            clean_image = (img - science_dark) / flat_image
+            self.science_images.append(clean_image)
+
+    @staticmethod
+    def init_alignment_threshold(shape: Tuple):
+        ScienceImage.ALIGNMENT_DISPLACEMENT_THRESHOLD_X = int(shape[0] / 2)
+        ScienceImage.ALIGNMENT_DISPLACEMENT_THRESHOLD_Y = int(shape[1] / 2)
+
+    def get_aligned_science(self) -> np.ndarray:
+        return self.aligned_image
+
+    def calculate_aligned_science(self) -> np.ndarray:
+        star_centers: List[Tuple[int, int]] = []
+        for image in self.science_images:
+            star_cluster_image = StarClusterImage(image)
+            star_cluster_image.find_image_centers()
+            star_cluster_image.calc_sorted_star_weights()
+            brightest_star_center = star_cluster_image.get_brightest_star_centers(1)[0]
+            star_centers.append(brightest_star_center)
+        aligned_science = self.science_images[0].copy()
+        maximum_delta_x, maximum_delta_y = 0, 0
+        base_x, base_y = star_centers[0]
+        for i in range(1, len(self.science_images)):
+            img = self.science_images[i].copy()
+            delta_x = star_centers[i][0] - base_x
+            delta_y = star_centers[i][1] - base_y
+            img = np.roll(img, -delta_y, axis=0)
+            img = np.roll(img, -delta_x, axis=1)
+            aligned_science += img
+            if delta_x > maximum_delta_x:
+                maximum_delta_x = delta_x
+            if delta_y > maximum_delta_y:
+                maximum_delta_y = delta_y
+        self.aligned_image = aligned_science
+        return aligned_science
 
 
 class StarClusterImage:
@@ -209,6 +257,16 @@ class StarClusterImage:
                 else:
                     self.marks[i][j] = 1
         return False
+
+    def _is_unvisited_and_star(self, x: int, y: int) -> bool:
+        if x < 0 or y < 0 or \
+                x >= self.image.shape[0] or \
+                y >= self.image.shape[1]:
+            return False
+        if self.marks[x][y]:
+            return False
+        if self.image[x][y] > self.star_flux_threshold:
+            return True
 
     def get_cropped_image_by_center(self, star_center: Tuple[int, int]) -> np.ndarray:
         x_start = star_center[0] - self.CROPPED_STAR_IMAGE_SIZE

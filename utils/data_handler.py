@@ -22,6 +22,10 @@ class FitsHandler:
         return np.dot(rgb_image.T, [0.2989, 0.5870, 0.1140])
 
     @classmethod
+    def get_blue_color(cls, rgb_image: np.ndarray) -> np.ndarray:
+        return np.dot(rgb_image.T, [0, 0, 1])
+
+    @classmethod
     def crop_image(cls, image: np.ndarray) -> np.ndarray:
         for i in range(4):
             image = np.delete(image, i, 0)
@@ -50,6 +54,6 @@ class FitsHandler:
         rgb_image = hdu_list[0].data
         hdu_list.close()
         logger.info(f'Processing {filename}')
-        grayscale_image = self.get_grayscale(rgb_image)
-        image = self.crop_image(grayscale_image)
+        blue_image = self.get_blue_color(rgb_image)
+        image = self.crop_image(blue_image)
         return image

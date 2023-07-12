@@ -8,19 +8,27 @@ This project increases signal to noise ratio in astronomical photos.
 
 In order to convert raw image from camera to fits
 image, we use `dcraw` and `convert` commands.
-To install these libraries in macos use (zsh shell):
+To install these libraries in `macOS` use:
 
-```zsh
+```bash
 brew install dcraw
 brew install imagemagick@6
 echo 'export PATH="$PATH:/opt/homebrew/opt/imagemagick@6/bin"' >> ~/.zshrc
 ```
 
+To install `dcraw` on `Ubuntu`:
+
+```bash
+sudo apt-get update -y
+sudo apt-get install -y dcraw
+sudo apt-get install -y netbpm
+```
+
 In order to convert raw photos to FITS,
 put raw photos in directory `data/raw` and run
 
-```zsh
-zsh process_raw.sh
+```bash
+bash process_raw.sh
 ```
 
 FITS photos will be written in directory `data/fits`

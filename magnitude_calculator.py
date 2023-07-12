@@ -1,51 +1,18 @@
 import logging
 from typing import List
 import numpy as np
+from astropy.io import fits
 
 from utils.data_handler import FitsHandler
 from utils.models import DarkImage, FlatImage, ScienceImage
+from const import (
+    dark_iso200_2s, dark_iso1000_1s, dark_iso1000_30s,
+    dark_iso200_30s, dark_iso400_30s, flat_morning,
+    flat_evening, IC4665, M13, ursa_major,
+)
 
 logging.basicConfig(level=logging.NOTSET)
 logger = logging.getLogger()
-
-SCIENCE_FILENAMES = [
-    'science_iso400_1.0_01.FITS',
-    'science_iso400_1.0_02.FITS',
-    'science_iso400_1.0_03.FITS',
-]
-SCIENCE_DARK_FILENAMES = [
-    'dark_iso400_1.0_01.FITS',
-    'dark_iso400_1.0_02.FITS',
-    'dark_iso400_1.0_03.FITS',
-    'dark_iso400_1.0_04.FITS',
-    'dark_iso400_1.0_05.FITS',
-    'dark_iso400_1.0_06.FITS',
-    'dark_iso400_1.0_07.FITS',
-    'dark_iso400_1.0_08.FITS',
-    'dark_iso400_1.0_09.FITS',
-    'dark_iso400_1.0_10.FITS',
-    'dark_iso400_1.0_11.FITS',
-    'dark_iso400_1.0_12.FITS',
-]
-FLAT_FILENAMES = [
-    'flat_iso100_0.6_01.FITS',
-    'flat_iso100_0.6_02.FITS',
-    'flat_iso100_0.6_03.FITS',
-    'flat_iso100_0.6_04.FITS',
-    'flat_iso100_0.6_05.FITS',
-]
-FLAT_DARK_FILENAMES = [
-    'dark_iso100_0.6_01.FITS',
-    'dark_iso100_0.6_02.FITS',
-    'dark_iso100_0.6_03.FITS',
-    'dark_iso100_0.6_04.FITS',
-    'dark_iso100_0.6_05.FITS',
-    'dark_iso100_0.6_06.FITS',
-    'dark_iso100_0.6_07.FITS',
-    'dark_iso100_0.6_08.FITS',
-    'dark_iso100_0.6_09.FITS',
-    'dark_iso100_0.6_10.FITS',
-]
 
 
 def get_image_list_from_fits(fits_handler: FitsHandler, filenames: List[str]) -> List[np.ndarray]:
@@ -62,6 +29,20 @@ def get_dark_file(fits_handler: FitsHandler, exposure_time: str, filenames: List
 
 
 if __name__ == '__main__':
+    # Set files to be used here:
+    SCIENCE_DARK_FILENAMES = dark_iso200_2s
+    FLAT_DARK_FILENAMES = dark_iso1000_1s
+    FLAT_FILENAMES = flat_morning
+    SCIENCE_FILENAMES = ursa_major
+    ############################
+    # Set path for master images to save here:
+    ROOT_DIR = "data/master/"
+    SCIENCE_DARK_MASTER_NAME = "dark_iso200_2s.FITS"
+    FLAT_DARK_MASTER_NAME = "dark_iso1000_1s.FITS"
+    FLAT_MASTER_NAME = "flat_morning.FITS"
+    SCIENCE_MASTER_PREFIX = "ursa_major"
+    ############################
+
     logger.info('Starting JAROO...')
     fits_handler = FitsHandler()
 
@@ -84,5 +65,20 @@ if __name__ == '__main__':
         normalized_flat,
         science_sigma_clipped_dark
     )
-    science_image.calculate_aligned_science()
 
+    logger.info('Writing master images to fits')
+    hdu = fits.PrimaryHDU(unclean_science_images)
+    hdu.writeto(ROOT_DIR + SCIENCE_DARK_MASTER_NAME)
+    hdu = fits.PrimaryHDU(flat_sigma_clipped_dark)
+    hdu.writeto(ROOT_DIR + FLAT_DARK_MASTER_NAME)
+    hdu = fits.PrimaryHDU(normalized_flat)
+    hdu.writeto(ROOT_DIR + FLAT_MASTER_NAME)
+
+    i = 0
+    for image in science_image.science_images:
+        logger.info(f"Writing {i}'s science image")
+        hdu = fits.PrimaryHDU(image)
+        hdu.writeto(ROOT_DIR + SCIENCE_MASTER_PREFIX + f'_{i}.FITS')
+        i += 1
+
+    logger.info('DONE')
